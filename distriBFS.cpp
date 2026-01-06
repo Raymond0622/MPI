@@ -56,7 +56,7 @@ struct Graph {
         ownership.resize(n);
         numP = _numP;
         for (int i = 0; i < n;i++) {
-            ownership[i] = i % _numP;
+            ownership[i] = i % numP;
         }
     }
     // denotes directed edge from p to q
@@ -89,26 +89,50 @@ int main(int argc, char** argv) {
     const auto curr = std::chrono::system_clock::now();
     const auto epoch = curr.time_since_epoch();
     unsigned int seed = std::chrono::duration_cast<std::chrono::milliseconds>(epoch).count();
+    //seed = 123;
     std::mt19937 engine(seed);
 
     // create graph so that we dont have cycles. Use union find algorthim to find cycle
     Union union_find(n);
     Graph graph(n, size);
-    for (int i = 0;i < 99;i++) {
-        std::uniform_int_distribution<int> diststart(0, 3);
-        std::uniform_int_distribution<int> dist(0, 99);
-        while (true)  {
-            int p = diststart(engine);
-            int q = dist(engine);
-            //printf("%d %d %d %d\n", i, p, q, union_find.checker(p, q));
-            if (graph.adjList[p].count(q) || p == q || union_find.checker(p, q)) {
-                continue;
+    if (rank == 0) {
+        for (int i = 0;i < n- 1;i++) {
+            std::uniform_int_distribution<int> diststart(0, size-1);
+            std::uniform_int_distribution<int> dist(0, n - 1);
+            while (true)  {
+                int p = dist(engine);
+                int q = dist(engine);
+                
+                if (graph.adjList[p].count(q) || p == q || union_find.checker(p, q)) {
+                    continue;
+                }
+                else {
+                    graph.insertEdge(p, q);
+                    printf("%d %d %d %d\n", i, p, q, union_find.checker(p, q));
+                    union_find.unite(p, q);
+                    break;
+                }
             }
-            else {
-                graph.insertEdge(p, q);
-                union_find.unite(p, q);
-                break;
-            }
+        }
+    }
+    MPI_Bcast(&graph.numP, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast(graph.ownership.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
+    for (int i = 0; i < n;i++) {
+        size_t sizeAdj;
+        if (rank == 0) {
+            sizeAdj = graph.adjList[i].size();
+        }
+        MPI_Bcast(&sizeAdj, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+        std::vector<int> buffer;
+        // iterators do not necessary point to contigous memory, so much transfer it
+        // some datat structure that is
+        if (rank == 0)
+            buffer.assign(graph.adjList[i].begin(), graph.adjList[i].end());
+        else
+            buffer.resize(sizeAdj);
+        MPI_Bcast(buffer.data(), sizeAdj, MPI_INT, 0, MPI_COMM_WORLD);
+        if (rank != 0) {
+            graph.adjList[i].insert(buffer.begin(), buffer.end());
         }
     }
     // Message<char, 100> msg;
@@ -120,7 +144,6 @@ int main(int argc, char** argv) {
     // // allocate sizes where recbuf[i] represent the buffer coming
     // // from the ith rank processor.
     std::vector<std::vector<int>> recbuf(size);
-    // recbuf is the starting point
     recbuf[rank].push_back(rank);
     int depth = 0;
    
@@ -159,8 +182,7 @@ int main(int argc, char** argv) {
                 MPI_Irecv(recbuf[i].data(), recvcount[i],
                     MPI_INT, i, 0, MPI_COMM_WORLD, &req);
                     requests.push_back(req);
-            }
-            
+            }  
         }
         for (int i = 0; i < size;i++) {
             if (sendcount[i] > 0) {
@@ -170,26 +192,21 @@ int main(int argc, char** argv) {
                     requests.push_back(req);
             }
         }
-
         MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
         depth++;
-        printf("Rank %d has %d vertices %d depth\n", rank, getQueueSize(recbuf), depth);
-        // for (auto v : recbuf[i])
-        //     printf("Rank %d gets vertex %d\n", rank, v);
-
+        for (int i = 0; i < size;i++) {
+            for (auto v : recbuf[i])
+                printf("Rank %d gets vertex %d with depth %d\n", rank, v, depth);
+        };
         if (getQueueSize(recbuf) ==0) {
             local_flag = 1;
         }
-        
         MPI_Allreduce(&local_flag, &global_flag, 1, MPI_INT, 
                 MPI_LAND, MPI_COMM_WORLD);
     
         if (global_flag) {
             break;
-        }
-        
+        }   
     }
-    
     MPI_Finalize();
-
 }
