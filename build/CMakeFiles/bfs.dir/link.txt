@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/bfs.dir/main.cpp.o CMakeFiles/bfs.dir/src/Graph.cpp.o CMakeFiles/bfs.dir/src/HelperFunctions.cpp.o CMakeFiles/bfs.dir/src/RandomBinaryTree.cpp.o CMakeFiles/bfs.dir/src/RandomTree.cpp.o CMakeFiles/bfs.dir/src/UnionFind.cpp.o -o bfs  /opt/homebrew/Cellar/open-mpi/5.0.2/lib/libmpi.dylib

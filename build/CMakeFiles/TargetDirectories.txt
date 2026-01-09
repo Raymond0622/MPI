@@ -1,0 +1,3 @@
+/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/bfs.dir
+/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/edit_cache.dir
+/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/rebuild_cache.dir

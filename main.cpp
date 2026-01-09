@@ -2,11 +2,14 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include <cmath>
-#include <chrono>
-#include <random>
 #include <unordered_set>
 #include <type_traits>
 #include <tuple>
+
+#include "Graph.hpp"
+#include "UnionFind.hpp"
+#include "RandomTree.hpp"
+#include "RandomBinaryTree.hpp"
 
 template <typename T, size_t N>
 class Message {
@@ -17,12 +20,13 @@ template <typename T, size_t N>
 struct Data {
     int source;
     Message<T, N> msg;
+    // require default constructor for creating custom MPI data struct
     Data() {};
     Data(int s) : source(s) {};
 };
 
 using DataType = std::variant<Data<int, 100>, Data<int, 200>, 
-    Data<double, 20>, Data<long long, 50>>;
+    Data<double, 20000>, Data<long long, 50>>;
 
 constexpr size_t numType = std::variant_size_v<DataType>;
 
@@ -34,20 +38,6 @@ int getQueueSize(std::vector<std::vector<int>>& recvcount) {
         }
     }
     return tot;
-};
-
-template <typename T, typename... Ts>
-struct typelist {};
-template <std::size_t N, typename T>
-struct get;
-
-template <std::size_t N, typename T, typename... Ts>
-struct get<N, typelist<T, Ts...>> {
-    using type = typename get<N - 1, typelist<Ts...>>::type;
-};
-template <typename T, typename... Ts>
-struct get<0, typelist<T, Ts...>> {
-    using type = T;
 };
 
 template <typename T>
@@ -77,58 +67,6 @@ void create_my_mpi_types(std::vector<MPI_Datatype>& datatype,
     (create_mpi_struct(Idx, std::get<Idx>(tup), datatype, types, lengths), ...);
 }
 
-struct Union {
-    int size;
-    std::vector<int> parent;
-    Union(int n) : size(n) {
-        parent.resize(n, 0);
-        for (int i = 0; i < n;i++) {
-            parent[i] = i;
-        }
-    };
-    int find(int x) {
-        if (parent[x] != x) {
-            parent[x] = find(parent[x]);
-        }
-        return parent[x];
-    }
-    void unite(int x, int y) {
-        int p1 = find(x), p2 = find(y);
-        if (p1 != p2) {
-            parent[p1] = p2;
-        }
-    }
-    bool checker(int x, int y) {
-        return find(x) == find(y);
-    }
-};
-
-struct Graph {
-    Graph (size_t n, size_t _numP) {
-        adjList.resize(n);
-        ownership.resize(n);
-        numP = _numP;
-        for (int i = 0; i < n;i++) {
-            ownership[i] = i % numP;
-        }
-    }
-    // denotes directed edge from p to q
-    void insertEdge(int p, int q) {
-        adjList[p].insert(q);
-    }
-    // denote removal of an edge from p to q;
-    void removeEdge(int p, int q) {
-        if (adjList[p].count(q)) {
-            adjList[p].erase(q);  
-        }
-    }
-    int getOwner(size_t n) {
-        return ownership[n];
-    }
-    std::vector<std::unordered_set<int>> adjList;
-    std::vector<int> ownership;
-    size_t numP;
-};
 
 int findIdxType(DataType& type) {
     return type.index();
@@ -146,11 +84,12 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
     // // allocate sizes where recbuf[i][j] represent the buffer coming
     // // from the jth rank processor of type ith variant.
     std::vector<std::vector<std::vector<DataType>>> recbuf(numType, std::vector<std::vector<DataType>>(size));
-
-    recbuf[2][rank].emplace_back(Data<double, 20>(rank));
+    //using StartType = std::variant_alternative_t<1, DataType>();
+    recbuf[2][rank].push_back(Data<double, 20000>(rank));
     int depth = 0;
    
     int global_flag = 0;
+
     while (true) {
 
         int local_flag = 0;
@@ -221,7 +160,7 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
             for (int j = 0; j < size;j++) {
                 for (auto& v : recbuf[i][j]) {
                     std::visit([&](auto& msg) {
-                        printf("Rank %d gets vertex %d of msg type %d with depth %d\n", rank, msg.source, i, depth);
+                        //printf("Rank %d gets vertex %d of msg type %d with depth %d\n", rank, msg.source, i, depth);
                     }, v);
                 }
             }
@@ -240,43 +179,23 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
 }
 
 int main(int argc, char** argv) {
-    int n = 10;
 
     MPI_Init(&argc, &argv);
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // random generator to generate random edges
-    const auto curr = std::chrono::system_clock::now();
-    const auto epoch = curr.time_since_epoch();
-    unsigned int seed = std::chrono::duration_cast<std::chrono::milliseconds>(epoch).count();
-    //seed = 123;
-    std::mt19937 engine(seed);
+    int n = std::stoi(argv[1]);
 
-    // create graph so that we dont have cycles. Use union find algorthim to find cycle
-    Union union_find(n);
+    // random generator to generate random edges
     Graph graph(n, size);
     if (rank == 0) {
-        for (int i = 0;i < n- 1;i++) {
-            std::uniform_int_distribution<int> diststart(0, size-1);
-            std::uniform_int_distribution<int> dist(0, n - 1);
-            while (true)  {
-                int p = dist(engine);
-                int q = dist(engine);
-                
-                if (graph.adjList[p].count(q) || p == q || union_find.checker(p, q)) {
-                    continue;
-                }
-                else {
-                    graph.insertEdge(p, q);
-                    printf("%d %d %d %d\n", i, p, q, union_find.checker(p, q));
-                    union_find.unite(p, q);
-                    break;
-                }
-            }
-        }
+        // this is object slicing, but graph/RandomGraph contains 
+        // same member variable, but only rank 0 should fill
+        // the member variables up.
+        graph = RandomTree(n, size);
     }
+   
     MPI_Bcast(&graph.numP, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast(graph.ownership.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
     for (int i = 0; i < n;i++) {
