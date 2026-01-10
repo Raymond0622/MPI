@@ -74,17 +74,127 @@ int findIdxType(DataType& type) {
     return type.index();
 }
 
+
+// this creates a tuple that stores vectors of each variant type
+// since we cant store all the variants in a single tensor, 
+// we have to store them separately, but nicely into one single struct
+template <typename U>
+struct Tuple;
+
+template <size_t... Idx>
+struct Tuple <std::integer_sequence<size_t, Idx...>> {
+    Tuple(int size) {
+        resize(size);
+    }
+    std::tuple<std::vector<std::vector<std::variant_alternative_t<Idx, DataType>>>...> tup;
+    void resize(int size) {
+        (std::get<Idx>(tup).resize(size), ...);
+    }
+    void insert(int rank, 
+        int source, size_t idx, int count) {
+        // can use lambdas (C++20)
+        auto f = [&]<size_t I>() {
+            if (I == idx) {
+                for (int j = 0; j < count;j++) {
+                    using T = typename std::remove_reference_t<decltype(std::get<I>(tup)[rank])>::value_type;
+                    std::get<I>(tup)[rank].push_back(
+                        T(source));
+                }
+            }
+        };
+        (f.template operator()<Idx>(), ...);
+    }
+};
+
+// how many to insert for which message type and how many
+// idx is the type of message
+// rank is the which processor to put it into (2nd idx in tuple)
+// source is the vertex the message will be sent to
+// this is to initialize the initial data messages
+// this seems a bit disgusting, but good metaprogramming practice
+template <size_t... Idx>
+void insert(Tuple<std::integer_sequence<size_t, Idx...>>& Tup, int rank, 
+    int source, size_t idx, int count) {
+    // can use lambdas (C++20)
+    auto f = [&]<size_t I>() {
+        if (I == idx) {
+            for (int j = 0; j < count;j++) {
+                using T = typename std::remove_reference_t<decltype(std::get<I>(Tup.tup)[rank])>::value_type;
+                std::get<I>(Tup.tup)[rank].push_back(
+                    T(source));
+            }
+        }
+    };
+    (f.template operator()<Idx>(), ...);
+}
+
+// overloaded version of insert, but now we insert
+// the input contains data
+template <typename T, size_t... Idx>
+void insert(Tuple<std::integer_sequence<size_t, Idx...>>& Tup, int rank, 
+    T&& data, size_t idx) {
+    // can use lambdas (C++20)
+    auto f = [&]<size_t I>() {
+        if (I == idx) {
+            std::get<I>(Tup.tup)[rank].push_back(
+                std::forward<T>(data));
+        }
+    };
+    (f.template operator()<Idx>(), ...);
+}
+
+template <size_t... Idx>
+void clear(Tuple<std::integer_sequence<size_t, Idx...>>& Tup) {
+    auto f = [&]<size_t I>() {
+        std::get<I>(Tup.tup).clear();
+    };
+    (f.template operator()<Idx>(), ...);
+}
+
+// resize the inner recbuf, this is for resizing
+// actual data array
+// count contains the # of idx type data message will get
+// for each process
+// so count[i] represents # idx msg type the it process has.
+template <size_t... Idx>
+void resize_inner(Tuple<std::integer_sequence<size_t, Idx...>>& Tup, 
+                        const int& idx, const std::vector<int>& count) {
+    auto f = [&]<size_t I>() {
+        if (I == idx) {
+            auto& tmp = std::get<I>(Tup.tup);
+            for (int j = 0; j < count.size();j++) {
+                tmp[j].resize(count[j]);
+            }
+        }
+    };
+    (f.template operator()<Idx>(), ...);
+}
+
+// resize the outer array so that 
+// each element of the tuple (which is a 2D array)
+// has size equal to # of processor
+template <size_t... Idx>
+void resize_outer(Tuple<std::integer_sequence<size_t, Idx...>>& Tup, 
+                    const int& size) {
+    auto f = [&]<size_t I>() {
+        std::get<I>(Tup.tup).resize(size);
+    };
+    (f.template operator()<Idx>(), ...);
+}
+
+
+template <size_t... Idx>
 void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype,
-    std::vector<std::vector<std::vector<DataType>>> recbuf) {
+    Tuple<std::integer_sequence<size_t, Idx...>>& recbuf) {
     // now since we have different types, we need sendcount, recvount for each type
     std::vector<std::vector<int>> sendcount, recvcount;
 
-    // senddata[i][j] represents vector jth variant data to send to ith processor
-    std::vector<std::vector<std::vector<DataType>>> senddata;
+    // std::get<i>(senddata)[j] represents vector ith variant data to send to jth processor
+    Tuple<std::integer_sequence<size_t, Idx...>> senddata;
     // // find out how many verticies (based on rank) are going to the next BFS level
     // // This is sort of like degree of a veritices per level
 
-    // // allocate sizes where recbuf[i][j] represent the buffer coming
+    // // allocate sizes where std::get<i>(recbuf)[j] represent the buffer coming
     // // from the jth rank processor of type ith variant.
     int depth = 0;
    
@@ -95,8 +205,10 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
         int local_flag = 0;
         sendcount.assign(numType, std::vector<int>(size, 0));
         recvcount.assign(numType, std::vector<int>(size, 0));
-        senddata.clear();
-        senddata.assign(size, std::vector<std::vector<DataType>>(numType));
+        //senddata.clear();
+       // senddata.assign(size, std::vector<std::vector<DataType>>(numType));
+        clear(senddata);
+        resize_outer(senddata, size);
                 
         for (int i = 0; i < numType;i++) {
             for (int j = 0; j < size;j++) {
@@ -115,11 +227,11 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
                                 sendcount[i][own]++;
                                 auto new_data = data;
                                 new_data.source = v;
-                                senddata[i][own].push_back(std::move(new_data));
-                                std::visit([&](auto& d) {
-                                    if (depth == 1)
-                                        printf("%d %d\n", rank, d.source);
-                                }, senddata[i][own].back());
+                                insert(recbuf, own, std::move(new_data), i);
+                                // std::visit([&](auto& d) {
+                                //     if (depth == 1)
+                                //         printf("%d %d\n", rank, d.source);
+                                // }, senddata[i][own].back());
                             }
                             
                     }, msg);
@@ -140,12 +252,12 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
             MPI_Alltoall(sendcount[i].data(), 1, MPI_INT,
                 recvcount[i].data(), 1, MPI_INT, MPI_COMM_WORLD);
         }
-        recbuf.clear();
-        recbuf.assign(numType, std::vector<std::vector<DataType>>(size));
+        //recbuf.clear();
+        //recbuf.assign(numType, std::vector<std::vector<DataType>>(size));
+        clear(recbuf);
+        resize_outer(recbuf, size);
         for (int i = 0; i < numType;i++) {
-            for (int j = 0; j < size;j++) {
-                recbuf[i][j].resize(recvcount[i][j]);
-            }
+            resize_inner(recbuf, i, recvcount[i]);
         }
 
         // for (int i = 0;i < numType;i++) {
@@ -255,27 +367,25 @@ int main(int argc, char** argv) {
     int lengths[4][2] = {{1, 100}, {1, 200}, {1, 20}, {1, 50}};
     std::vector<MPI_Datatype> mydatatype;
 
+    using Seq = decltype(std::make_integer_sequence<std::size_t, numType>{});
     create_my_mpi_types(mydatatype, types, lengths, 
-       std::make_integer_sequence<std::size_t, numType>{});
+       Seq{});
     
-    std::vector<std::vector<std::vector<DataType>>> recbuf(numType, 
-            std::vector<std::vector<DataType>>(size));
+    Tuple<Seq> recbuf(size);
 
     if (GRAPH == "BT") {
         // get the root node's process owner
         //printf("AYA");
         int owner = graph.getOwner(graph.perm[0]);
         //printf("Owner node: %d %d\n", graph.perm[0], owner);
-        recbuf[0][owner].emplace_back(std::in_place_index<0>, rank);
-        //recbuf[1][owner].push_back(std::in_place_index<0>, rank);
-        //recbuf[2][owner].push_back(std::in_place_index<1>, rank);
-        //recbuf[3][owner].push_back(std::in_place_index<2>, rank);
+        insert(recbuf, owner, graph.perm[0], 0, 1);
     }
     else if (GRAPH == "RT" || GRAPH == "DAG") {
         //printf("AYA");
-        recbuf[2][rank].push_back(Data<double, 20000>(rank));
+        insert(recbuf, rank, rank, 0, 2);
+        //recbuf[2][rank].push_back(Data<double, 20000>(rank));
     }
-    bfs(graph, rank, size, mydatatype, recbuf);
+    //bfs(graph, rank, size, mydatatype, recbuf);
     for (int i = 0; i < numType;i++) {
         MPI_Type_free(&mydatatype[i]);
     }
