@@ -128,10 +128,24 @@ CMakeFiles/bfs.dir/src/RandomBinaryTree.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/bfs.dir/src/RandomBinaryTree.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/raymondpark/Desktop/MPIstuff/src/RandomBinaryTree.cpp -o CMakeFiles/bfs.dir/src/RandomBinaryTree.cpp.s
 
+CMakeFiles/bfs.dir/src/RandomDAG.cpp.o: CMakeFiles/bfs.dir/flags.make
+CMakeFiles/bfs.dir/src/RandomDAG.cpp.o: /Users/raymondpark/Desktop/MPIstuff/src/RandomDAG.cpp
+CMakeFiles/bfs.dir/src/RandomDAG.cpp.o: CMakeFiles/bfs.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/bfs.dir/src/RandomDAG.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/bfs.dir/src/RandomDAG.cpp.o -MF CMakeFiles/bfs.dir/src/RandomDAG.cpp.o.d -o CMakeFiles/bfs.dir/src/RandomDAG.cpp.o -c /Users/raymondpark/Desktop/MPIstuff/src/RandomDAG.cpp
+
+CMakeFiles/bfs.dir/src/RandomDAG.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/bfs.dir/src/RandomDAG.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/raymondpark/Desktop/MPIstuff/src/RandomDAG.cpp > CMakeFiles/bfs.dir/src/RandomDAG.cpp.i
+
+CMakeFiles/bfs.dir/src/RandomDAG.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/bfs.dir/src/RandomDAG.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/raymondpark/Desktop/MPIstuff/src/RandomDAG.cpp -o CMakeFiles/bfs.dir/src/RandomDAG.cpp.s
+
 CMakeFiles/bfs.dir/src/RandomTree.cpp.o: CMakeFiles/bfs.dir/flags.make
 CMakeFiles/bfs.dir/src/RandomTree.cpp.o: /Users/raymondpark/Desktop/MPIstuff/src/RandomTree.cpp
 CMakeFiles/bfs.dir/src/RandomTree.cpp.o: CMakeFiles/bfs.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/bfs.dir/src/RandomTree.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/bfs.dir/src/RandomTree.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/bfs.dir/src/RandomTree.cpp.o -MF CMakeFiles/bfs.dir/src/RandomTree.cpp.o.d -o CMakeFiles/bfs.dir/src/RandomTree.cpp.o -c /Users/raymondpark/Desktop/MPIstuff/src/RandomTree.cpp
 
 CMakeFiles/bfs.dir/src/RandomTree.cpp.i: cmake_force
@@ -145,7 +159,7 @@ CMakeFiles/bfs.dir/src/RandomTree.cpp.s: cmake_force
 CMakeFiles/bfs.dir/src/UnionFind.cpp.o: CMakeFiles/bfs.dir/flags.make
 CMakeFiles/bfs.dir/src/UnionFind.cpp.o: /Users/raymondpark/Desktop/MPIstuff/src/UnionFind.cpp
 CMakeFiles/bfs.dir/src/UnionFind.cpp.o: CMakeFiles/bfs.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/bfs.dir/src/UnionFind.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/bfs.dir/src/UnionFind.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/bfs.dir/src/UnionFind.cpp.o -MF CMakeFiles/bfs.dir/src/UnionFind.cpp.o.d -o CMakeFiles/bfs.dir/src/UnionFind.cpp.o -c /Users/raymondpark/Desktop/MPIstuff/src/UnionFind.cpp
 
 CMakeFiles/bfs.dir/src/UnionFind.cpp.i: cmake_force
@@ -162,6 +176,7 @@ bfs_OBJECTS = \
 "CMakeFiles/bfs.dir/src/Graph.cpp.o" \
 "CMakeFiles/bfs.dir/src/HelperFunctions.cpp.o" \
 "CMakeFiles/bfs.dir/src/RandomBinaryTree.cpp.o" \
+"CMakeFiles/bfs.dir/src/RandomDAG.cpp.o" \
 "CMakeFiles/bfs.dir/src/RandomTree.cpp.o" \
 "CMakeFiles/bfs.dir/src/UnionFind.cpp.o"
 
@@ -172,12 +187,13 @@ bfs: CMakeFiles/bfs.dir/main.cpp.o
 bfs: CMakeFiles/bfs.dir/src/Graph.cpp.o
 bfs: CMakeFiles/bfs.dir/src/HelperFunctions.cpp.o
 bfs: CMakeFiles/bfs.dir/src/RandomBinaryTree.cpp.o
+bfs: CMakeFiles/bfs.dir/src/RandomDAG.cpp.o
 bfs: CMakeFiles/bfs.dir/src/RandomTree.cpp.o
 bfs: CMakeFiles/bfs.dir/src/UnionFind.cpp.o
 bfs: CMakeFiles/bfs.dir/build.make
 bfs: /opt/homebrew/Cellar/open-mpi/5.0.2/lib/libmpi.dylib
 bfs: CMakeFiles/bfs.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable bfs"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable bfs"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/bfs.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

@@ -5,8 +5,12 @@
 Graph::Graph (size_t n, size_t _numP) {
     adjList.resize(n);
     ownership.resize(n);
+    perm.resize(n);
+    depth.resize(n);
+    parent.resize(n);
     numP = _numP;
     for (int i = 0; i < n;i++) {
+        // can define a more complicated/reasonable ownership
         ownership[i] = i % numP;
     }
 }

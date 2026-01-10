@@ -225,6 +225,30 @@ src/RandomBinaryTree.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bfs.dir/build.make CMakeFiles/bfs.dir/src/RandomBinaryTree.cpp.s
 .PHONY : src/RandomBinaryTree.cpp.s
 
+src/RandomDAG.o: src/RandomDAG.cpp.o
+.PHONY : src/RandomDAG.o
+
+# target to build an object file
+src/RandomDAG.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bfs.dir/build.make CMakeFiles/bfs.dir/src/RandomDAG.cpp.o
+.PHONY : src/RandomDAG.cpp.o
+
+src/RandomDAG.i: src/RandomDAG.cpp.i
+.PHONY : src/RandomDAG.i
+
+# target to preprocess a source file
+src/RandomDAG.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bfs.dir/build.make CMakeFiles/bfs.dir/src/RandomDAG.cpp.i
+.PHONY : src/RandomDAG.cpp.i
+
+src/RandomDAG.s: src/RandomDAG.cpp.s
+.PHONY : src/RandomDAG.s
+
+# target to generate assembly for a file
+src/RandomDAG.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bfs.dir/build.make CMakeFiles/bfs.dir/src/RandomDAG.cpp.s
+.PHONY : src/RandomDAG.cpp.s
+
 src/RandomTree.o: src/RandomTree.cpp.o
 .PHONY : src/RandomTree.o
 
@@ -294,6 +318,9 @@ help:
 	@echo "... src/RandomBinaryTree.o"
 	@echo "... src/RandomBinaryTree.i"
 	@echo "... src/RandomBinaryTree.s"
+	@echo "... src/RandomDAG.o"
+	@echo "... src/RandomDAG.i"
+	@echo "... src/RandomDAG.s"
 	@echo "... src/RandomTree.o"
 	@echo "... src/RandomTree.i"
 	@echo "... src/RandomTree.s"

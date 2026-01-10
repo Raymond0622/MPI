@@ -12,6 +12,9 @@ struct Graph {
 
     std::vector<std::unordered_set<int>> adjList;
     std::vector<int> ownership;
+    std::vector<int> depth;
+    std::vector<int> parent;
+    std::vector<int> perm;
     size_t numP;
 };
 

@@ -204,6 +204,9 @@ DistributedBFS_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 DistributedBFS_SOURCE_DIR:STATIC=/Users/raymondpark/Desktop/MPIstuff
 
+//No help, variable specified on the command line.
+GRAPH_TYPE:UNINITIALIZED=DAG
+
 //Executable for running MPI programs.
 MPIEXEC_EXECUTABLE:FILEPATH=/opt/homebrew/bin/mpiexec
 

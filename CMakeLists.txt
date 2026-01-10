@@ -16,3 +16,6 @@ add_executable(bfs main.cpp ${SOURCES})
 target_include_directories(bfs PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 target_link_libraries(bfs PRIVATE MPI::MPI_CXX)
+
+add_compile_definitions(GRAPH_TYPE="${GRAPH_TYPE}")
+

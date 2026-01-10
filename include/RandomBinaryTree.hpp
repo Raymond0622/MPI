@@ -8,8 +8,6 @@ struct RandomBinaryTree : Graph {
     RandomBinaryTree(size_t n, size_t _numP);
     int getParent(int x);
     int getDepth(int x);
-    std::vector<int> parent;
-    std::vector<int> depth;
 };
 
 #endif

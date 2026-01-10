@@ -5,21 +5,23 @@
 #include <unordered_set>
 #include <type_traits>
 #include <tuple>
+#include <string>
 
 #include "Graph.hpp"
 #include "UnionFind.hpp"
 #include "RandomTree.hpp"
+#include "RandomDAG.hpp"
 #include "RandomBinaryTree.hpp"
 
 template <typename T, size_t N>
-class Message {
+struct Message {
     T msg[N];
 };
 
 template <typename T, size_t N>
 struct Data {
     int source;
-    Message<T, N> msg;
+    T msg[N];
     // require default constructor for creating custom MPI data struct
     Data() {};
     Data(int s) : source(s) {};
@@ -48,7 +50,7 @@ void create_mpi_struct(std::size_t idx, T tmp, std::vector<MPI_Datatype>& dataty
         MPI_Datatype MPI_Data;
         MPI_Get_address(&tmp, &base);
         MPI_Get_address(&tmp.source, &offset[0]);
-        MPI_Get_address(&tmp.msg, &offset[1]);
+        MPI_Get_address(&tmp.msg[0], &offset[1]);
         offset[0] -= base; offset[1] -= base;
         MPI_Type_create_struct(2, lengths[idx], offset, types[idx], &MPI_Data);
         MPI_Type_commit(&MPI_Data);
@@ -72,7 +74,8 @@ int findIdxType(DataType& type) {
     return type.index();
 }
 
-void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype) {
+void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype,
+    std::vector<std::vector<std::vector<DataType>>> recbuf) {
     // now since we have different types, we need sendcount, recvount for each type
     std::vector<std::vector<int>> sendcount, recvcount;
 
@@ -83,9 +86,6 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
 
     // // allocate sizes where recbuf[i][j] represent the buffer coming
     // // from the jth rank processor of type ith variant.
-    std::vector<std::vector<std::vector<DataType>>> recbuf(numType, std::vector<std::vector<DataType>>(size));
-    //using StartType = std::variant_alternative_t<1, DataType>();
-    recbuf[2][rank].push_back(Data<double, 20000>(rank));
     int depth = 0;
    
     int global_flag = 0;
@@ -103,21 +103,36 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
                 // data of type ith variant from jth processor
                 for (auto& msg : recbuf[i][j]) {
                     // need to get index before visiting
+                    // we already know the index due to structure
+                    // of recbuf, but lets do it this way
                     int idx_type = findIdxType(msg);
                     std::visit([&](auto data) {
                             int u = data.source;
+                            int own;
                             for (auto v : graph.adjList[u]) {
-                                int own = graph.getOwner(v);
-                                //printf("Rank %d has %d\n", rank, v);
+                                own = graph.getOwner(v);
+                                //printf("%d to %d\n", u, v);
                                 sendcount[i][own]++;
                                 auto new_data = data;
                                 new_data.source = v;
                                 senddata[i][own].push_back(std::move(new_data));
+                                std::visit([&](auto& d) {
+                                    if (depth == 1)
+                                        printf("%d %d\n", rank, d.source);
+                                }, senddata[i][own].back());
                             }
+                            
                     }, msg);
+                   
                 }   
             }
         }
+        // for (int i = 0;i < numType;i++) {
+        //     for (int j = 0; j < size;j++) {
+        //         if (depth == 1 && sendcount[i][j] > 0)
+        //             printf("sendcount %d %d %d\n", rank, j, sendcount[i][j]);
+        //     }
+        // }
 
         // // Send the degree to each process
         // since we need to send count data fro each type, we do for each type of variant
@@ -132,6 +147,13 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
                 recbuf[i][j].resize(recvcount[i][j]);
             }
         }
+
+        // for (int i = 0;i < numType;i++) {
+        //     for (int j = 0; j < size;j++) {
+        //         if (depth == 1 && recvcount[i][j] > 0)
+        //             printf("recvcount %d %d %d\n", rank, j, recvcount[i][j]);
+        //     }
+        // }
         // // Post non-blocking receives
         std::vector<MPI_Request> requests;
         for (int i = 0; i < numType;i++) {
@@ -156,16 +178,23 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
         }
         MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
         depth++;
+        if (rank == 0) {
+            printf("FINSIHED LEVEL\n");
+        }
         for (int i = 0; i < numType;i++) {
             for (int j = 0; j < size;j++) {
                 for (auto& v : recbuf[i][j]) {
                     std::visit([&](auto& msg) {
                         //printf("Rank %d gets vertex %d of msg type %d with depth %d\n", rank, msg.source, i, depth);
+                        if (depth == 2)
+                            printf("check: %d\n", msg.source);
                     }, v);
                 }
             }
         };
-        //printf("rank %d %d\n", rank, getQueueSize(recbuf));
+
+        if (depth == 2) return;
+
         if (getQueueSize(recvcount) == 0) {
             local_flag = 1;
         }
@@ -180,6 +209,7 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
 
 int main(int argc, char** argv) {
 
+    const std::string GRAPH = std::string(GRAPH_TYPE);
     MPI_Init(&argc, &argv);
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -193,11 +223,14 @@ int main(int argc, char** argv) {
         // this is object slicing, but graph/RandomGraph contains 
         // same member variable, but only rank 0 should fill
         // the member variables up.
-        graph = RandomTree(n, size);
+        if (GRAPH == "BT") graph = RandomBinaryTree(n, size);
+        else if (GRAPH == "RT") graph = RandomTree(n, size);
+        else if (GRAPH == "DAG") graph = RandomDAG(n, size);
     }
    
     MPI_Bcast(&graph.numP, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast(graph.ownership.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(graph.perm.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
     for (int i = 0; i < n;i++) {
         size_t sizeAdj;
         if (rank == 0) {
@@ -225,7 +258,24 @@ int main(int argc, char** argv) {
     create_my_mpi_types(mydatatype, types, lengths, 
        std::make_integer_sequence<std::size_t, numType>{});
     
-    bfs(graph, rank, size, mydatatype);
+    std::vector<std::vector<std::vector<DataType>>> recbuf(numType, 
+            std::vector<std::vector<DataType>>(size));
+
+    if (GRAPH == "BT") {
+        // get the root node's process owner
+        //printf("AYA");
+        int owner = graph.getOwner(graph.perm[0]);
+        //printf("Owner node: %d %d\n", graph.perm[0], owner);
+        recbuf[0][owner].emplace_back(std::in_place_index<0>, rank);
+        //recbuf[1][owner].push_back(std::in_place_index<0>, rank);
+        //recbuf[2][owner].push_back(std::in_place_index<1>, rank);
+        //recbuf[3][owner].push_back(std::in_place_index<2>, rank);
+    }
+    else if (GRAPH == "RT" || GRAPH == "DAG") {
+        //printf("AYA");
+        recbuf[2][rank].push_back(Data<double, 20000>(rank));
+    }
+    bfs(graph, rank, size, mydatatype, recbuf);
     for (int i = 0; i < numType;i++) {
         MPI_Type_free(&mydatatype[i]);
     }

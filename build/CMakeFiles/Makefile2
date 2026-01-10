@@ -85,12 +85,12 @@ clean: CMakeFiles/bfs.dir/clean
 CMakeFiles/bfs.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bfs.dir/build.make CMakeFiles/bfs.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bfs.dir/build.make CMakeFiles/bfs.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Built target bfs"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8 "Built target bfs"
 .PHONY : CMakeFiles/bfs.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/bfs.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles 7
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles 8
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/bfs.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles 0
 .PHONY : CMakeFiles/bfs.dir/rule
@@ -102,7 +102,7 @@ bfs: CMakeFiles/bfs.dir/rule
 # codegen rule for target.
 CMakeFiles/bfs.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bfs.dir/build.make CMakeFiles/bfs.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Finished codegen for target bfs"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8 "Finished codegen for target bfs"
 .PHONY : CMakeFiles/bfs.dir/codegen
 
 # clean rule for target.
