@@ -28,7 +28,7 @@ struct Data {
 };
 
 using DataType = std::variant<Data<int, 100>, Data<int, 200>, 
-    Data<double, 20000>, Data<long long, 50>>;
+    Data<double, 200>, Data<long long, 50>>;
 
 constexpr size_t numType = std::variant_size_v<DataType>;
 
@@ -59,8 +59,8 @@ void create_mpi_struct(std::size_t idx, T tmp, std::vector<MPI_Datatype>& dataty
 
 template <std::size_t... Idx>
 void create_my_mpi_types(std::vector<MPI_Datatype>& datatype, 
-    MPI_Datatype types[4][2], 
-    int lengths[4][2], std::integer_sequence<std::size_t, Idx...>) {
+    MPI_Datatype types[numType][2], 
+    int lengths[numType][2], std::integer_sequence<std::size_t, Idx...>) {
     
     // very hacky way of getting each alternative type.
     std::tuple<std::variant_alternative_t<Idx, DataType>...> tup(
@@ -72,6 +72,29 @@ void create_my_mpi_types(std::vector<MPI_Datatype>& datatype,
 
 int findIdxType(DataType& type) {
     return type.index();
+}
+
+// need this struct to extract template types for Data
+// i.e., we say that T = Data<int, 200>, 
+// how do we get T = int, and N = 200?
+template <typename T>
+struct extract;
+
+template <typename T, size_t N>
+struct extract<Data<T, N>> {
+    using type = T;
+    constexpr static int value = N;
+};
+
+
+template <size_t... Idx>
+void extract_f(std::integer_sequence<size_t, Idx...>, int (&lengths)[numType][2]) {
+    auto f = [&]<size_t I>() {
+        lengths[I][0] = 1;
+        lengths[I][1] = extract< typename std::variant_alternative_t<I, DataType>>::value;
+    };
+    (f.template operator()<Idx>(), ...);
+    
 }
 
 // this creates a tuple that stores vectors of each variant type
@@ -243,7 +266,7 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
         // for (int i = 0;i < numType;i++) {
         //     for (int j = 0; j < size;j++) {
         //         if (sendcount[i][j] > 0)
-        //             printf("sendcount %d %d %d\n", rank, j, sendcount[i][j]);
+        //             printf("sendcount %d %d %d %d\n", i, rank, j, sendcount[i][j]);
         //     }
         // }
 
@@ -263,7 +286,7 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
 
         // for (int i = 0;i < numType;i++) {
         //     for (int j = 0; j < size;j++) {
-        //         if (depth == 1 && recvcount[i][j] > 0)
+        //         if (recvcount[i][j] > 0)
         //             printf("recvcount %d %d %d\n", rank, j, recvcount[i][j]);
         //     }
         // }
@@ -291,8 +314,8 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
         }
         MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
         depth++;
-
         recbuf.print(rank, size, depth);
+                
         if (getQueueSize(recvcount) == 0) {
             local_flag = 1;
         }
@@ -326,6 +349,8 @@ int main(int argc, char** argv) {
         else if (GRAPH == "DAG") graph = RandomDAG(n, size);
     }
    
+    // cast this to other processors in order for the random graph 
+    // to be the same across 
     MPI_Bcast(&graph.numP, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast(graph.ownership.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(graph.perm.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
@@ -348,9 +373,12 @@ int main(int argc, char** argv) {
         }
     }
     // prepare MPI stuff for my own data structs
-    MPI_Datatype types[4][2] = {{MPI_INT, MPI_INT}, {MPI_INT, MPI_INT},
+    // extract template types from DataType defintion
+    MPI_Datatype types[numType][2] = {{MPI_INT, MPI_INT}, {MPI_INT, MPI_INT},
             {MPI_INT, MPI_DOUBLE}, {MPI_INT, MPI_LONG_LONG}};
-    int lengths[4][2] = {{1, 100}, {1, 200}, {1, 20}, {1, 50}};
+
+    int lengths[numType][2];
+    extract_f(std::make_integer_sequence<size_t, numType>{}, lengths);
     std::vector<MPI_Datatype> mydatatype;
 
     using Seq = decltype(std::make_integer_sequence<std::size_t, numType>{});
@@ -366,8 +394,8 @@ int main(int argc, char** argv) {
         recbuf.insert(owner, graph.perm[0], 0, 1);
     }
     else if (GRAPH == "RT" || GRAPH == "DAG") {
-        recbuf.insert(rank, rank, 0, 1);
-        //printf("YAYA");
+        recbuf.insert(rank, rank, 2, 3);
+        recbuf.insert(rank, rank, 1, 1);
         //recbuf[2][rank].push_back(Data<double, 20000>(rank));
     }
     bfs(graph, rank, size, mydatatype, recbuf);
