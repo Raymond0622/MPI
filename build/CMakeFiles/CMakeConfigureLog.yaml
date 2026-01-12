@@ -1147,3 +1147,72 @@ events:
         
       exitCode: 0
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/FindMPI.cmake:1286 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/FindMPI.cmake:1330 (_MPI_try_staged_settings)"
+      - "/opt/homebrew/share/cmake/Modules/FindMPI.cmake:1653 (_MPI_check_lang_works)"
+      - "CMakeLists.txt:7 (find_package)"
+    description: "The MPI test test_mpi for CXX in mode normal"
+    directories:
+      source: "/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/CMakeScratch/TryCompile-QsJvH9"
+      binary: "/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/CMakeScratch/TryCompile-QsJvH9"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "MPI_RESULT_CXX_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/CMakeScratch/TryCompile-QsJvH9'
+        
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_c2655/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_c2655.dir/build.make CMakeFiles/cmTC_c2655.dir/build
+        Building CXX object CMakeFiles/cmTC_c2655.dir/test_mpi.cpp.o
+        /usr/bin/c++  -isystem /opt/homebrew/Cellar/open-mpi/5.0.2/include -std=gnu++20 -arch arm64 -MD -MT CMakeFiles/cmTC_c2655.dir/test_mpi.cpp.o -MF CMakeFiles/cmTC_c2655.dir/test_mpi.cpp.o.d -o CMakeFiles/cmTC_c2655.dir/test_mpi.cpp.o -c /Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/CMakeScratch/TryCompile-QsJvH9/test_mpi.cpp
+        Linking CXX executable cmTC_c2655
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c2655.dir/link.txt --verbose=1
+        /usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_c2655.dir/test_mpi.cpp.o -o cmTC_c2655  /opt/homebrew/Cellar/open-mpi/5.0.2/lib/libmpi.dylib
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/FindMPI.cmake:1286 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/FindMPI.cmake:1680 (_MPI_try_staged_settings)"
+      - "CMakeLists.txt:7 (find_package)"
+    description: "The MPI test test_mpi for CXX in mode MPICXX"
+    directories:
+      source: "/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/CMakeScratch/TryCompile-h8KCdZ"
+      binary: "/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/CMakeScratch/TryCompile-h8KCdZ"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "MPI_RESULT_CXX_test_mpi_MPICXX"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/CMakeScratch/TryCompile-h8KCdZ'
+        
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_37582/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_37582.dir/build.make CMakeFiles/cmTC_37582.dir/build
+        Building CXX object CMakeFiles/cmTC_37582.dir/test_mpi.cpp.o
+        /usr/bin/c++  -isystem /opt/homebrew/Cellar/open-mpi/5.0.2/include -std=gnu++20 -arch arm64 -MD -MT CMakeFiles/cmTC_37582.dir/test_mpi.cpp.o -MF CMakeFiles/cmTC_37582.dir/test_mpi.cpp.o.d -o CMakeFiles/cmTC_37582.dir/test_mpi.cpp.o -c /Users/raymondpark/Desktop/MPIstuff/build/CMakeFiles/CMakeScratch/TryCompile-h8KCdZ/test_mpi.cpp
+        Linking CXX executable cmTC_37582
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_37582.dir/link.txt --verbose=1
+        /usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_37582.dir/test_mpi.cpp.o -o cmTC_37582  /opt/homebrew/Cellar/open-mpi/5.0.2/lib/libmpi.dylib
+        
+      exitCode: 0
+...
