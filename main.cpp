@@ -86,9 +86,9 @@ struct extract<Data<T, N>> {
     constexpr static int value = N;
 };
 
-
+// extract data variable types traits into lengths
 template <size_t... Idx>
-void extract_f(std::integer_sequence<size_t, Idx...>, int (&lengths)[numType][2]) {
+constexpr void extract_f(std::integer_sequence<size_t, Idx...>, int (&lengths)[numType][2]) {
     auto f = [&]<size_t I>() {
         lengths[I][0] = 1;
         lengths[I][1] = extract< typename std::variant_alternative_t<I, DataType>>::value;
