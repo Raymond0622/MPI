@@ -91,7 +91,7 @@ template <size_t... Idx>
 constexpr void extract_f(std::integer_sequence<size_t, Idx...>, int (&lengths)[numType][2]) {
     auto f = [&]<size_t I>() {
         lengths[I][0] = 1;
-        lengths[I][1] = extract< typename std::variant_alternative_t<I, DataType>>::value;
+        lengths[I][1] = extract<typename std::variant_alternative_t<I, DataType>>::value;
     };
     (f.template operator()<Idx>(), ...);
     
@@ -324,7 +324,6 @@ void bfs(Graph& graph, int& rank, int& size, std::vector<MPI_Datatype>& datatype
         if (global_flag) {
             break;
         }   
-        //return;
     }
 }
 
@@ -395,13 +394,12 @@ int main(int argc, char** argv) {
     }
     else if (GRAPH == "RT" || GRAPH == "DAG") {
         recbuf.insert(rank, rank, 2, 3);
-        recbuf.insert(rank, rank, 1, 1);
+        recbuf.insert(rank, rank, 1, 10);
         //recbuf[2][rank].push_back(Data<double, 20000>(rank));
     }
     bfs(graph, rank, size, mydatatype, recbuf);
     for (int i = 0; i < numType;i++) {
         MPI_Type_free(&mydatatype[i]);
     }
-    
     MPI_Finalize();
 }

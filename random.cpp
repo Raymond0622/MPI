@@ -1,50 +1,57 @@
-#include <type_traits>
+#include <atomic>
+#include <barrier>
+#include <thread>
+#include <vector>
+#include <chrono>
 #include <iostream>
-#include <stdlib.h>
-#include <string>
 
+constexpr int NTHREADS = 2;
+constexpr int N = 100'000'000;
 
-template <size_t Row, size_t Column, typename T>
-struct Matrix {
-    template <size_t Row2, size_t Col2, typename T2>
-    std::enable_if_t<Column == Row2, Matrix<Row, Col2, T>> operator*(const Matrix<Row2, Col2, T2>& matrix) {
-        static_assert(Column == Row2);
-        Matrix<Row, Col2, T> ma;
-        return ma;
+std::atomic<int> count{0};
+std::barrier sync_point(NTHREADS + 1); // workers + main
+
+void worker() {
+    // wait until all threads are ready
+    sync_point.arrive_and_wait();
+
+    // work
+    for (int i = 0; i < N; ++i) {
+        count.fetch_add(1, std::memory_order_relaxed);
     }
-};
 
-void meh(const std::string& str) {
-    std::cout << 1;
+    // signal completion
+    sync_point.arrive_and_wait();
 }
 
-// template <typename T, typename... Ts>
-// struct CountType : std::integral_constant<size_t, (std::is_same_v<T, Ts> + ...)>{};
 
-template <typename T, typename U, typename... Ts>
-struct CountType {
-    static constexpr size_t value = std::is_same_v<T, U> + CountType<T, Ts...>::value;
-};
+void increment() {
+    std::vector<std::thread> threads;
+    for (int i = 0; i < NTHREADS; ++i)
+        threads.emplace_back(worker);
 
-template <typename T, typename U>
-struct CountType<T, U> {
-    static constexpr size_t value = std::is_same_v<T, U>;
-};
+    // release workers
+    sync_point.arrive_and_wait(); // here only the main thread joins, but
+    // in the worker() barrier, two worker threads have arrived, so for a 
+    // total of 3 threads which allows the barrier to be passed now
+    // this simulates the fact that all 3 threads have arrived.
+    auto start = std::chrono::steady_clock::now();
 
-struct Mine {
-    int x;
-    int y;
-    std::string s;
-};
+    // wait for completion
+    sync_point.arrive_and_wait();
+    auto end = std::chrono::steady_clock::now();
+
+    for (auto& t : threads)
+        t.join();
+
+    std::chrono::duration<double> dt = end - start;
+    std::cout << "Time: " << dt.count() << " s\n";
+}
 
 
 int main() {
-    Matrix<5, 2, int> matrix;
-    Matrix<2, 5, int> matrix2;
-    auto ans = matrix * matrix2;
-
-    //std::cout << CountType<int, int, double, char, int>::value;
-    meh("123");
-    std::cout << std::is_trivially_copyable_v<Mine>;
-
+   
+    increment();
+    std::cout << count;
+  
 }
